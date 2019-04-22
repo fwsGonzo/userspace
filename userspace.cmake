@@ -19,7 +19,6 @@ option(SANITIZE     "Enable undefined- and address sanitizers" OFF)
 option(LIBFUZZER    "Enable in-process fuzzer" OFF)
 option(PAYLOAD_MODE "Disable things like checksumming" OFF)
 option(ENABLE_LTO   "Enable LTO for use with Clang/GCC" ON)
-option(CUSTOM_BOTAN "Enable building with a local Botan" OFF)
 option(ENABLE_S2N   "Enable building a local s2n" OFF)
 option(STATIC_BUILD "Build a portable static executable" OFF)
 option(STRIP_BINARY "Strip final binary to reduce size" OFF)
@@ -80,17 +79,11 @@ if (LIBCPP)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
-if(CUSTOM_BOTAN)
-  include_directories("/usr/local/include/botan/botan-2")
-endif()
-
 set(ARCH "x86_64")
 add_definitions("-DARCH=${ARCH}" "-DARCH_${ARCH}")
 add_definitions(-DOS_TERMINATE_ON_CONTRACT_VIOLATION)
 add_definitions(-DARP_PASSTHROUGH)
 add_definitions(-DNO_DEBUG)
-add_definitions(-DSERVICE=\"\\\"${BINARY}\\\"\")
-add_definitions(-DSERVICE_NAME=\"\\\"${SERVICE_NAME}\\\"\")
 add_definitions(-DUSERSPACE_KERNEL)
 if (PORTABLE)
 	add_definitions(-DPORTABLE_USERSPACE)
@@ -113,23 +106,6 @@ add_subdirectory(${USPCPATH}/src/plugins plugins)
 endif()
 add_subdirectory(${USPCPATH}/repos repos)
 
-# linux executable
-add_executable(service ${SOURCES} ${IOSPATH}/src/service_name.cpp)
-set_target_properties(service PROPERTIES OUTPUT_NAME ${BINARY})
-
-target_include_directories(service PUBLIC
-    ${IOSPATH}/api
-    ${USPCPATH}/repos/GSL
-    ${LOCAL_INCLUDES}
-  )
-
-# IncludeOS plugins
-# TODO: implement me
-
-if (CUSTOM_BOTAN)
-  set(BOTAN_LIBS /usr/local/lib/libbotan-2.a)
-  target_link_libraries(service ${BOTAN_LIBS} -ldl -pthread)
-endif()
 if (ENABLE_S2N)
   find_package(OpenSSL REQUIRED)
   include(ExternalProject)
@@ -140,6 +116,7 @@ if (ENABLE_S2N)
       INSTALL_COMMAND   ""
       DOWNLOAD_NAME libs2n.a
   )
+  set(S2N_LIBS s2n OpenSSL::SSL)
 
   add_library(s2n STATIC IMPORTED)
   set_target_properties(s2n PROPERTIES LINKER_LANGUAGE C)
@@ -150,31 +127,55 @@ if (ENABLE_S2N)
   add_library(openssl STATIC IMPORTED)
   set_target_properties(openssl PROPERTIES LINKER_LANGUAGE C)
   set_target_properties(openssl PROPERTIES IMPORTED_LOCATION libssl.a)
+endif()
 
-  set(S2N_LIBS s2n OpenSSL::SSL)
-  target_link_libraries(service ${S2N_LIBS} -ldl -pthread)
-  target_include_directories(includeos PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/libs2n-prefix/src/libs2n/api)
-  target_include_directories(microlb PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/libs2n-prefix/src/libs2n/api)
-endif()
-target_link_libraries(service ${PLUGINS_LIST})
-target_link_libraries(service includeos linuxrt microlb liveupdate
-                      includeos linuxrt http_parser)
-target_link_libraries(service ${EXTRA_LIBS})
-if (CUSTOM_BOTAN)
-  target_link_libraries(service ${BOTAN_LIBS})
-endif()
-if (ENABLE_S2N)
-  target_link_libraries(service ${S2N_LIBS})
-endif()
+# userspace executable
+function(os_add_executable NAME DESC)
+  add_executable(service ${ARGN} ${IOSPATH}/src/service_name.cpp)
+  set_source_files_properties(${IOSPATH}/src/service_name.cpp
+      PROPERTIES COMPILE_DEFINITIONS
+      "SERVICE=\"\\\"${NAME}\\\"\";SERVICE_NAME=\"\\\"${DESC}\\\"\"")
+  set_target_properties(service PROPERTIES OUTPUT_NAME ${NAME})
+
+  target_include_directories(service PUBLIC
+      ${IOSPATH}/api
+      ${USPCPATH}/repos/GSL
+      ${LOCAL_INCLUDES}
+    )
+
+  # IncludeOS plugins
+  # TODO: implement me
+
+  if (ENABLE_S2N)
+    target_link_libraries(service ${S2N_LIBS} -ldl -pthread)
+    target_include_directories(includeos PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/libs2n-prefix/src/libs2n/api)
+    target_include_directories(microlb PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/libs2n-prefix/src/libs2n/api)
+  endif()
+  target_link_libraries(service ${PLUGINS_LIST})
+  target_link_libraries(service includeos linuxrt microlb liveupdate
+                        includeos linuxrt http_parser)
+  if (ENABLE_S2N)
+    target_link_libraries(service ${S2N_LIBS})
+  endif()
+
+  if (STATIC_BUILD)
+    target_link_libraries(service -static-libstdc++ -static-libgcc)
+  endif()
+
+  # write binary name to file
+  file(WRITE ${CMAKE_BINARY_DIR}/binary.txt ${NAME})
+endfunction()
+
+function(os_link_libraries NAME)
+  target_link_libraries(service ${ARGN})
+endfunction()
 
 if (STATIC_BUILD)
   set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
   set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-  target_link_libraries(service -static-libstdc++ -static-libgcc)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -pthread")
   set(BUILD_SHARED_LIBRARIES OFF)
 endif()
-
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   # use system linker
 else()
@@ -189,6 +190,3 @@ endif()
 if (STRIP_BINARY)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
 endif()
-
-# write binary name to file
-file(WRITE ${CMAKE_BINARY_DIR}/binary.txt ${BINARY})

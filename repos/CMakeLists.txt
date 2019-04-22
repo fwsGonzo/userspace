@@ -108,9 +108,11 @@ set(OS_SOURCES
     ${IOSPATH}/src/util/path_to_regex.cpp
     ${IOSPATH}/src/util/percent_encoding.cpp
     ${IOSPATH}/src/util/uri.cpp
-    # remove this on clang < 9.0
-    #${IOSPATH}/src/util/pmr_default.cpp
   )
+if (CLANG_VERSION_MAJOR VERSION_GREATER 8)
+  # remove this on clang < 9.0
+  list(APPEND OS_SOURCES ${IOSPATH}/src/util/pmr_default.cpp)
+endif()
 
 set(MANA_SOURCES
     mana/src/server.cpp

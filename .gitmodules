@@ -1,0 +1,18 @@
+[submodule "repos/IncludeOS"]
+	path = repos/IncludeOS
+	url = https://github.com/fwsGonzo/IncludeOS.git
+[submodule "repos/GSL"]
+	path = repos/GSL
+	url = https://github.com/Microsoft/GSL.git
+[submodule "repos/microlb"]
+	path = repos/microlb
+	url = https://github.com/includeos/microlb.git
+[submodule "repos/http-parser"]
+	path = repos/http-parser
+	url = https://github.com/nodejs/http-parser.git
+[submodule "repos/mana"]
+	path = repos/mana
+	url = https://github.com/includeos/mana.git
+[submodule "repos/rapidjson"]
+	path = repos/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

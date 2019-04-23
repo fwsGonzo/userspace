@@ -19,14 +19,14 @@
 
 ### Options
 
-* Use EXTRA_LIBS in CMake project to add your own libraries
+* Apply your own CMake code to the 'service' target:
+    * `target_link_libraries(service mylib)`
 * CMake options:
     * Some options require enabling it in both the Linux platform CMake project and the service code CMake project for it to fully work.
-    * CUSTOM_BOTAN: Use your local Botan for Botan TLS (enable both)
     * ENABLE_LTO: Enable ThinLTO. Only works with clang. (enable both)
     * GPROF: Enable profiling with gprof (enable both)
     * SANITIZE: Enable asan and ub sanitizers (enable both)
 
 ### Testing it
 
-Run one of the Linux platform tests in /test/linux. If you get the error `RTNETLINK answers: File exists`, flush the interface with `sudo ip addr flush dev bridge43`. Where bridge43 is the interface name.
+Run one of the tests in /services with ./test.sh. If you get the error `RTNETLINK answers: File exists`, flush the interface with `sudo ip addr flush dev bridge43`. Where bridge43 is the interface name. You might have to do the same if the interface stops responding. If all else fails, restart the machine.

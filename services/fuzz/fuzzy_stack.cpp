@@ -50,7 +50,8 @@ namespace fuzzy
       }
     case IP6:
       {
-        const net::ip6::Addr src {fuzzer.steal64(), fuzzer.steal64()};
+        net::ip6::Addr src {fuzzer.steal64(), fuzzer.steal64()};
+				src.i16[0] = 0x00FF;
         const uint8_t proto = fuzzer.steal8();
         auto* next_layer = add_ip6_layer(eth_end, fuzzer,
                            src, inet.ip6_addr(), proto);

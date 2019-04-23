@@ -31,26 +31,10 @@ bool accept_client(net::Socket remote, std::string origin)
 
 void websocket_service(net::TCP& tcp, uint16_t port)
 {
-  if (ENABLE_TLS)
+  if constexpr (ENABLE_TLS)
   {
-    if (USE_BOTAN_TLS)
-    {
-      auto& filesys = fs::memdisk().fs();
-      // load CA certificate
-      auto ca_cert = filesys.stat("/test.der");
-      // load CA private key
-      auto ca_key  = filesys.stat("/test.key");
-      // load server private key
-      auto srv_key = filesys.stat("/server.key");
-
-      PER_CPU(httpd).server = new http::Botan_server(
-            "blabla", ca_key, ca_cert, srv_key, tcp);
-    }
-    else
-    {
-      PER_CPU(httpd).server = new http::OpenSSL_server(
-            "/test.pem", "/test.key", tcp);
-    }
+    PER_CPU(httpd).server = new http::OpenSSL_server(
+          "/test.pem", "/test.key", tcp);
   }
   else
   {

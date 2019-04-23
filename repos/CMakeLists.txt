@@ -66,13 +66,9 @@ set(NET_SOURCES
   ${IOSPATH}/src/net/openssl/init.cpp
   ${IOSPATH}/src/net/openssl/client.cpp
   ${IOSPATH}/src/net/openssl/server.cpp
+  ${IOSPATH}/src/net/openssl/tls_stream.cpp
 
 )
-if (CUSTOM_BOTAN)
-  #${IOSPATH}/src/net/https/botan_server.cpp
-  set(NET_SOURCES ${NET_SOURCES}
-      "${IOSPATH}/src/net/https/botan_server.cpp")
-endif()
 if (ENABLE_S2N)
   set(NET_SOURCES ${NET_SOURCES}
       ${IOSPATH}/src/net/https/openssl_server.cpp

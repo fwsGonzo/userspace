@@ -11,6 +11,7 @@ set(NET_SOURCES
   ${IOSPATH}/src/net/ip4/arp.cpp
   ${IOSPATH}/src/net/ip4/ip4.cpp
   ${IOSPATH}/src/net/ip4/reassembly.cpp
+  ${IOSPATH}/src/net/ip6/addr.cpp
   ${IOSPATH}/src/net/ip6/addr_list.cpp
   ${IOSPATH}/src/net/ip6/extension_header.cpp
   ${IOSPATH}/src/net/ip6/ip6.cpp

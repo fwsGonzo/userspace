@@ -1,12 +1,13 @@
 #
 # Build and install plugins as libraries
 #
-set (IOS $ENV{INCLUDEOS_SRC})
-set (PDIR "${IOS}/src/plugins")
+set (DDIR "${IOSPATH}/src/drivers")
+set (PDIR "${IOSPATH}/src/plugins")
 
 # make LiveUpdate visible to plugins
-include_directories(${IOS}/lib/LiveUpdate)
-include_directories(${IOS}/mod/rapidjson/include)
+include_directories(${IOSPATH}/api)
+include_directories(${IOSPATH}/lib/LiveUpdate/include)
+include_directories(${IOSPATH}/mod/rapidjson/include)
 
 #add_library(system_log STATIC "${PDIR}/system_log.cpp")
 add_library(syslogd STATIC "${PDIR}/syslogd.cpp")
@@ -22,6 +23,8 @@ add_library(field_medic STATIC
             "${PDIR}/field_medic/fieldmedic.cpp"
             "${PDIR}/field_medic/diag.cpp")
 add_library(syslog STATIC "${PDIR}/syslog.cpp")
+
+add_library(ip4_reassembly STATIC "${DDIR}/ip4_reassembly.cpp")
 
 #
 # Installation

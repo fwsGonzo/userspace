@@ -170,6 +170,10 @@ function(os_link_libraries NAME)
   target_link_libraries(service ${ARGN})
 endfunction()
 
+function(os_add_drivers NAME)
+  target_link_libraries(service ${ARGN})
+endfunction()
+
 if (STATIC_BUILD)
   set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
   set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")

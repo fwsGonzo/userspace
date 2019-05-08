@@ -97,6 +97,11 @@ multiboot_info_t* kernel::bootinfo() {
   return nullptr;
 }
 
+namespace kernel {
+  void setup_liveupdate() {
+  
+  }
+}
 void kernel::init_heap(uintptr_t, uintptr_t) noexcept {
 
 }

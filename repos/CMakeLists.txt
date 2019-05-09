@@ -105,10 +105,14 @@ set(OS_SOURCES
     ${IOSPATH}/src/util/path_to_regex.cpp
     ${IOSPATH}/src/util/percent_encoding.cpp
     ${IOSPATH}/src/util/uri.cpp
+
+    #${IOSPATH}/src/util/pmr_default.cpp
   )
-if (CLANG_VERSION_MAJOR VERSION_GREATER 8)
-  # remove this on clang < 9.0
-  list(APPEND OS_SOURCES ${IOSPATH}/src/util/pmr_default.cpp)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8)
+    # remove this on clang < 9.0
+    list(APPEND OS_SOURCES ${IOSPATH}/src/util/pmr_default.cpp)
+  endif()
 endif()
 
 set(MANA_SOURCES

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.9)
 project (service C CXX)
 
 option(PORTABLE "" OFF)
+option(SAN_ADDR "" ON)
 #option(ENABLE_S2N "" ON)
 include(../../userspace.cmake)
 

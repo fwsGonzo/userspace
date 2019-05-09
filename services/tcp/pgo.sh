@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-export CC=gcc-7
-export CXX=g++-7
+#export CC=clang-6
+#export CXX=clang++-6
 $INCLUDEOS_PREFIX/bin/lxp-pgo | grep 'Server received'
 
 if [ $? == 0 ]; then

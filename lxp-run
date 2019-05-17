@@ -1,13 +1,94 @@
 #!/bin/bash
 set -e
 NUM_JOBS=${NUM_JOBS:--j8}
-RUN=${RUN:-"ON"}
-AS_ROOT=${AS_ROOT:-"OFF"}
+BUILD_ONLY=${BUILD_ONLY:-"OFF"}
+BUILD_FOLDER="build"
+RUN_ONLY=${RUN_ONLY:-"OFF"}
+DEFINES=""
+
+function show_help() {
+  echo "$0 --verbose --help"
+  echo "- Build options"
+  echo "$0 --build --bf [folder] --jobs N --def DEF1=VAL,DEF2=VAL"
+  echo "- Performance options"
+  echo "$0 --pgo-generate --pgo-use"
+  echo "- Run options"
+  echo "$0 --run --root --gdb --create-tap"
+}
+
+for i in "$@"
+do
+case $i in
+    -v|--verbose)
+    export VERBOSE=1
+    shift # past argument with no value
+    ;;
+    --build)
+    BUILD_ONLY="ON"
+    shift # past argument with no value
+    ;;
+    --bf)
+    shift
+    BUILD_FOLDER="$1"
+    shift # past argument with no value
+    ;;
+    --def)
+    shift
+    echo "* Using #defines $1"
+    DEFINES="$1"
+    shift # past argument with no value
+    ;;
+    -j|--jobs)
+    shift
+    NUM_JOBS=$i
+    shift # past argument with no value
+    ;;
+    --pgo-generate)
+    CMAKE_OPTIONS="-DPGO_ENABLE=ON -DPGO_GENERATE=ON"
+    shift # past argument with no value
+    ;;
+    --pgo-use)
+    CMAKE_OPTIONS="-DPGO_ENABLE=ON -DPGO_GENERATE=OFF"
+    shift # past argument with no value
+    ;;
+    --run)
+    RUN_ONLY="ON"
+    shift # past argument with no value
+    ;;
+    --root)
+    AS_ROOT="sudo -E"
+    shift # past argument with no value
+    ;;
+    --gdb)
+    DBG="gdb"
+    shift # past argument with no value
+    ;;
+    --create-tap)
+    set +e
+    sudo mknod /dev/net/tap c 10 200
+    set -e
+    shift # past argument with no value
+    ;;
+    --flush)
+    set +e
+    sudo ip addr flush dev bridge43
+    set -e
+    shift # past argument with no value
+    ;;
+    -h|--help)
+    show_help
+    exit
+    ;;
+    *)
+          # unknown option
+    ;;
+esac
+done
 
 function make_service() {
-  mkdir -p build
-  pushd build
-  cmake .. "$@"
+  mkdir -p $BUILD_FOLDER
+  pushd $BUILD_FOLDER
+  cmake .. "$@" $CMAKE_OPTIONS -DDEFINES=$DEFINES
   make $NUM_JOBS
   popd
 }
@@ -17,18 +98,13 @@ if [ ! -f CMakeLists.txt ]; then
    echo "There must be at least a CMakeLists.txt in service folder"
    exit 1
 fi
-make_service "$@"
 
-if [[ "$RUN" = "ON" ]]; then
-  #sudo mknod /dev/net/tap c 10 200
-  BINARY=build/"`cat build/binary.txt`"
-  # run with GDB
-  if [[ "$DBG" = "ON" ]]; then
-    BINARY="gdb $BINARY"
-  fi
-  # run as root with sudo
-  if [[ "$AS_ROOT" = "ON" ]]; then
-    BINARY="sudo $BINARY"
-  fi
-  $BINARY
+if [[ "$RUN_ONLY" = "OFF" ]]; then
+  make_service "$@"
+fi
+
+if [[ "$BUILD_ONLY" = "OFF" ]]; then
+  BINARY=$BUILD_FOLDER/"`cat build/binary.txt`"
+  # run with options
+  $AS_ROOT $DBG $BINARY
 fi

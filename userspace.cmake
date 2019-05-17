@@ -143,6 +143,7 @@ endif()
 # userspace executable
 function(os_add_executable NAME DESC)
   add_executable(service ${ARGN} ${IOSPATH}/src/service_name.cpp)
+  target_compile_definitions(service PRIVATE "${DEFINES}")
   set_source_files_properties(${IOSPATH}/src/service_name.cpp
       PROPERTIES COMPILE_DEFINITIONS
       "SERVICE=\"\\\"${NAME}\\\"\";SERVICE_NAME=\"\\\"${DESC}\\\"\"")

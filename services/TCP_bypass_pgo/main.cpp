@@ -6,9 +6,13 @@ void Service::start(const std::string&)
   begin_experiment();
 }
 
+__attribute__((noopt))
 void exit_decision()
 {
 #ifndef FINAL
-  exit(0);
+  static int sample_counter = 0;
+  if (++sample_counter >= 30) {
+    exit(0);
+  }
 #endif
 }

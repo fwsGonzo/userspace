@@ -84,6 +84,7 @@ int TAP_driver::alloc_tun()
   }
 
   this->m_dev = std::string{ifr.ifr_name};
+  this->mtu   = ifr.ifr_mtu;
   return fd;
 }
 

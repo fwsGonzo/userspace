@@ -1,7 +1,6 @@
 #include "epoll_evloop.hpp"
 
 #include "drivers/tap_driver.hpp"
-#include <hal/machine.hpp>
 #include <hw/usernet.hpp>
 #include <net/inet>
 #include <vector>
@@ -9,18 +8,16 @@
 static std::vector<std::shared_ptr<TAP_driver>> tap_devices;
 
 // create TAP device and hook up packet receive to UserNet driver
-void create_network_device(int N, const char* ip)
+void create_network_device(int N, const char* ip, const uint16_t MTU)
 {
   const std::string name = "tap" + std::to_string(N);
   auto tap = std::make_shared<TAP_driver> (name.c_str(), ip);
   tap_devices.push_back(tap);
   // the IncludeOS packet communicator
-  auto* usernet = new UserNet(1500);
-  // register driver for superstack
-  auto driver = std::unique_ptr<hw::Nic> (usernet);
-  os::machine().add<hw::Nic> (std::move(driver));
+  const uint16_t MIN_MTU = std::min(tap->MTU(), MTU);
+  auto& usernet = UserNet::create(MIN_MTU);
   // connect driver to tap device
-  usernet->set_transmit_forward(
+  usernet.set_transmit_forward(
     [tap] (net::Packet_ptr packet) {
       tap->write(packet->layer_begin(), packet->size());
     });
@@ -90,7 +87,7 @@ namespace linux
         const int fd = events.at(i).data.fd;
         if (tap->get_fd() == fd)
         {
-          char buffer[9000];
+          char buffer[16384];
           int len = tap->read(buffer, sizeof(buffer));
           // hand payload to driver
           tap->give_payload(buffer, len);

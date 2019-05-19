@@ -25,7 +25,7 @@
 
 using namespace net::tcp;
 
-static const uint16_t MTU = 9000;
+static const uint16_t MTU = 4000;
 static const size_t   BUFFER_SIZE = 1024*1024*50;
 static const uint16_t PORT_SEND = 1337;
 static const uint16_t PORT_RECV = 1338;
@@ -81,9 +81,9 @@ void begin_experiment()
   blob = net::tcp::construct_buffer(BUFFER_SIZE, '!');
 
   extern void create_network_device(int N, const char* ip, const uint16_t = 1500);
-  create_network_device(0, "10.0.0.1/24", MTU);
+  create_network_device(0, "10.0.10.1/24", MTU);
   auto& inet = net::Interfaces::get(0);
-  inet.network_config({10,0,0,42}, {255,255,255,0}, {10,0,0,1});
+  inet.network_config({10,0,10,42}, {255,255,255,0}, {10,0,10,1});
 
   auto& tcp = inet.tcp();
   tcp.set_DACK(dack); // default

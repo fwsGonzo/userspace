@@ -40,7 +40,7 @@ case $i in
     ;;
     -j|--jobs)
     shift
-    NUM_JOBS=$i
+    NUM_JOBS=-j$1
     shift # past argument with no value
     ;;
     --pgo-generate)

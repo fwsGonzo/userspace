@@ -115,12 +115,14 @@ TAP_driver::TAP_driver(const char* devname,
       std::abort();
   }
 
+  const int flags = fcntl(this->tun_fd, F_GETFL, 0);
+  fcntl(this->tun_fd, F_SETFL, flags | O_NONBLOCK);
+  
   // create epoll event
-  this->m_epoll = std::make_unique<epoll_event> ();
-  m_epoll->events = EPOLLIN;
-  m_epoll->data.fd = this->tun_fd;
+  m_epoll.events = EPOLLIN | EPOLLOUT;
+  m_epoll.data.fd = this->tun_fd;
   // register ourselves to epoll instance
-  linux::epoll_add_fd(this->tun_fd, *m_epoll);
+  linux::epoll_add_fd(this->tun_fd, m_epoll);
 }
 
 TAP_driver::~TAP_driver()

@@ -10,13 +10,8 @@ struct TAP_driver
   TAP_driver(const char* dev, const char* ip);
   ~TAP_driver();
 
-  void give_payload(const char* buffer, int len) {
-    if (m_on_read) m_on_read(buffer, len);
-  }
-
   uint16_t MTU() const noexcept { return this->mtu; }
 
-  void on_read(on_read_func func) { this->m_on_read = std::move(func); }
   int get_fd() const { return tun_fd; }
   int read (char *buf, int len);
   int write(const void* buf, int len);
@@ -30,7 +25,6 @@ private:
 
   int tun_fd;
   uint16_t mtu;
-  std::string  m_dev;
-  on_read_func m_on_read = nullptr;
-  std::unique_ptr<epoll_event> m_epoll = nullptr;
+  std::string m_dev;
+  epoll_event m_epoll;
 };

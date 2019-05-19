@@ -3,25 +3,76 @@
 #include "drivers/tap_driver.hpp"
 #include <hw/usernet.hpp>
 #include <net/inet>
+#include <deque>
 #include <vector>
 
-static std::vector<std::shared_ptr<TAP_driver>> tap_devices;
+struct usernet_with_tap  {
+  std::unique_ptr<TAP_driver> tap;
+  UserNet& usernet;
+  std::deque<net::Packet_ptr> writeq;
+  
+  void read_packets();
+  void write_packets();
+  void transmit(net::Packet_ptr);
+};
+static std::vector<usernet_with_tap> devices;
+
+void usernet_with_tap::read_packets()
+{
+  int count = 64; // read no more than X packets
+  while (count-- > 0)
+  {
+    //auto packet = this->usernet.get_buffer();
+    //int len =
+    //  this->tap->read((char*) packet->layer_begin(), packet->capacity());
+    auto* buffer = new char[8192];
+    int len =
+      this->tap->read(buffer, usernet.packet_len());
+    
+    if (LIKELY(len > 0))
+    {
+      usernet.receive(buffer, len);
+      // queue packet for usernet
+      //packet->set_data_end(len);
+      //this->usernet.receive(std::move(packet));
+    }
+    else {
+      break;
+    }
+  }
+}
+void usernet_with_tap::write_packets()
+{
+  while (!writeq.empty())
+  {
+    auto& packet = writeq.front();
+    int len = tap->write(packet->layer_begin(), packet->size());
+    if (len < 0) break;
+    writeq.pop_front();
+  }
+}
+void usernet_with_tap::transmit(net::Packet_ptr packet)
+{
+  this->writeq.push_back(std::move(packet));
+  this->write_packets();
+}
 
 // create TAP device and hook up packet receive to UserNet driver
 void create_network_device(int N, const char* ip, const uint16_t MTU)
 {
   const std::string name = "tap" + std::to_string(N);
-  auto tap = std::make_shared<TAP_driver> (name.c_str(), ip);
-  tap_devices.push_back(tap);
+  auto tap = std::make_unique<TAP_driver> (name.c_str(), ip);
   // the IncludeOS packet communicator
   const uint16_t MIN_MTU = std::min(tap->MTU(), MTU);
   auto& usernet = UserNet::create(MIN_MTU);
+  // store device combo
+  devices.push_back({std::move(tap), usernet, std::deque<net::Packet_ptr>{}});
+  const size_t idx = devices.size()-1;
   // connect driver to tap device
   usernet.set_transmit_forward(
-    [tap] (net::Packet_ptr packet) {
-      tap->write(packet->layer_begin(), packet->size());
+    [idx] (net::Packet_ptr packet) {
+      devices[idx].transmit(std::move(packet));
     });
-  tap->on_read({usernet, &UserNet::receive});
 }
 
 namespace linux
@@ -65,7 +116,7 @@ namespace linux
     const unsigned long long next = Timers::next().count();
     int timeout = (next == 0) ? -1 : (1 + next / 1000000ull);
 
-    if (timeout < 0 && tap_devices.empty()) {
+    if (timeout < 0 && devices.empty()) {
       printf("epoll_wait_events(): Deadlock reached\n");
       std::abort();
     }
@@ -82,15 +133,20 @@ namespace linux
     }
     for (int i = 0; i < ready; i++)
     {
-      for (auto& tap : tap_devices)
+      for (auto& dev : devices)
       {
         const int fd = events.at(i).data.fd;
-        if (tap->get_fd() == fd)
+        if (dev.tap->get_fd() == fd)
         {
-          char buffer[16384];
-          int len = tap->read(buffer, sizeof(buffer));
-          // hand payload to driver
-          tap->give_payload(buffer, len);
+          if (events.at(i).events & EPOLLIN) {
+            dev.read_packets();
+          }
+          if (events.at(i).events & EPOLLOUT) {
+            dev.write_packets();
+            if (dev.usernet.transmit_queue_available() > 0) {
+              dev.usernet.signal_tqa();
+            }
+          }
           break;
         } // tap devices
       }

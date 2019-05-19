@@ -110,8 +110,10 @@ set(OS_SOURCES
   )
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8)
-    # remove this on clang < 9.0
-    list(APPEND OS_SOURCES ${IOSPATH}/src/util/pmr_default.cpp)
+    if (LIBCPP)
+      # remove this on clang < 9.0
+      list(APPEND OS_SOURCES ${IOSPATH}/src/util/pmr_default.cpp)
+    endif()
   endif()
 endif()
 

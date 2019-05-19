@@ -6,7 +6,6 @@ void Service::start(const std::string&)
   begin_experiment();
 }
 
-__attribute__((noopt))
 void exit_decision()
 {
 #ifndef FINAL

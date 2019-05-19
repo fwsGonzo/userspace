@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 # need sudo for creating TAP node
-../../lxp-run --build --pgo-generate --create-tap --flush
+../../lxp-run --build -j 16 --pgo-generate --create-tap --flush
 # send 40MB file
 SIZE=40960
 echo ">> dd if=/dev/zero bs=1024 count=$SIZE > /dev/tcp/10.0.0.42/1338"
@@ -10,3 +10,6 @@ echo ">> dd if=/dev/zero bs=1024 count=$SIZE > /dev/tcp/10.0.0.42/1338"
 BINARY=build/"`cat build/binary.txt`"
 cp $BINARY build/pgo_binary
 echo "Success - stored $BINARY as build/pgo_binary"
+
+# for LLVM
+#llvm-profdata merge -o build/default.profdata build/default.profraw

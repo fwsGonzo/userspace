@@ -146,7 +146,7 @@ function(os_add_executable NAME DESC)
   target_compile_definitions(service PRIVATE "${DEFINES}")
   set_source_files_properties(${IOSPATH}/src/service_name.cpp
       PROPERTIES COMPILE_DEFINITIONS
-      "SERVICE=\"\\\"${NAME}\\\"\";SERVICE_NAME=\"\\\"${DESC}\\\"\"")
+  		"SERVICE=\"\\\"${NAME}\\\"\";SERVICE_NAME=\"\\\"${DESC}\\\"\";_LIVEUPDATE_MEMSIZE_=0")
   set_target_properties(service PROPERTIES OUTPUT_NAME ${NAME})
 
   target_include_directories(service PUBLIC

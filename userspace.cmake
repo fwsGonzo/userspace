@@ -9,7 +9,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON}")
 
 option(BUILD_PLUGINS "Build all plugins as libraries" OFF)
 option(DEBUGGING    "Enable debugging" OFF)
-option(PORTABLE     "Enable portable TAP-free userspace" ON)
+option(PORTABLE     "Enable portable TAP-free userspace" OFF)
 option(LIBCPP       "Enable libc++" OFF)
 set(LIBCPP_PATH     "$ENV{HOME}/llvm/install" CACHE STRING "Path to Clang installation")
 option(PERFORMANCE  "Enable performance mode" OFF)
